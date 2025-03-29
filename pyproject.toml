@@ -1,0 +1,10 @@
+[project]
+name = "kevin-mcp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "mcp>=1.6.0",
+    "pydantic-ai>=0.0.46",
+]
