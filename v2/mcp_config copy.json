@@ -1,0 +1,84 @@
+{
+    "mcpServers": {
+        "tavily": {
+            "command": "node",
+            "args": [
+                "C:\\Users\\kevin\\repos\\tavily-mcp\\build\\index.js"
+            ],
+            "env": {
+                "TAVILY_API_KEY": "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"
+            }
+        },
+        "fetch": {
+            "command": "uvx",
+            "args": [
+                "mcp-server-fetch"
+            ]
+        },
+        "langgraph-docs-mcp": {
+            "command": "uvx",
+            "args": [
+                "--from",
+                "mcpdoc",
+                "mcpdoc",
+                "--urls",
+                "LangGraph:https://langchain-ai.github.io/langgraph/llms.txt",
+                "--transport",
+                "stdio",
+                "--port",
+                "8081",
+                "--host",
+                "localhost"
+            ]
+        },
+        "filesystem": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                "H:\\temp storage",
+                "C:\\Users\\kevin\\repos",
+                "C:\\Users\\kevin\\AppData",
+                "H:\\AI_PAPERS",
+                "C:\\Users\\kevin\\repos\\ottomator-agents\\pydantic-ai-mcp-agent\\working_file_directory",
+                "C:\\Users\\kevin\\OneDrive\\Desktop"
+            ],
+            "env": {
+                "DEBUG": "*"
+            }
+        },
+        "mcp-installer": {
+            "command": "npx",
+            "args": [
+                "@anaisbetts/mcp-installer"
+            ]
+        },
+        "arxiv-mcp-server": {
+            "command": "uv",
+            "args": [
+                "tool",
+                "run",
+                "arxiv-mcp-server",
+                "--storage-path",
+                "H:\\AI_PAPERS"
+            ]
+        },
+        "mcp-perplexity": {
+            "command": "uvx",
+            "args": [
+                "mcp-perplexity"
+            ],
+            "env": {
+                "PERPLEXITY_API_KEY": "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",
+                "PERPLEXITY_MODEL": "sonar-pro",
+                "DB_PATH": "chats.db"
+            }
+        },
+        "mcp-youtube": {
+            "command": "npx",
+            "args": [
+                "@anaisbetts/mcp-youtube"
+            ]
+        }
+    }
+}
