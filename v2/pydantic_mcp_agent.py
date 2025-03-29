@@ -10,6 +10,7 @@ import os
 from pydantic_ai import Agent
 from openai import AsyncOpenAI, OpenAI
 from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.providers import Provider, infer_provider
 
 import mcp_client
 from mcp_client import LLMProvider, ProviderConfig
@@ -66,20 +67,48 @@ def get_provider_config() -> ProviderConfig:
         )
 
 def get_model():
-    """Create an OpenAI model with the chosen provider configuration."""
+    """Create an OpenAI model with the chosen provider configuration.
+
+    Following the exact documented signature from pydantic-ai docs:
+
+    def __init__(
+        self,
+        model_name: OpenAIModelName,
+        *,
+        provider: Literal['openai', 'deepseek', 'azure'] | Provider[AsyncOpenAI] = 'openai',
+        system_prompt_role: OpenAISystemPromptRole | None = None,
+    )
+    """
     config = get_provider_config()
 
-    # Create OpenAI client with appropriate configuration
-    client = AsyncOpenAI(
-        api_key=config.api_key,
-        base_url=config.get_base_url()
-    )
+    # Set environment variables for authentication
+    os.environ['OPENAI_API_KEY'] = config.api_key
 
-    # Create OpenAIModel - pass the model name as the first positional argument
-    # This appears to be how the current version of the library expects it
+    provider_string = 'openai'
+    if config.provider == LLMProvider.ANTHROPIC:
+        provider_string = 'anthropic'
+    elif config.provider == LLMProvider.GEMINI:
+        provider_string = 'gemini'
+    elif config.provider == LLMProvider.OLLAMA:
+        provider_string = 'ollama'
+
+    # Create a provider with the specified base URL
+    provider = infer_provider(provider_string)
+
+    # Set base_url on the provider directly
+    if provider_string == 'openai' and config.get_base_url() != 'https://api.openai.com/v1':
+        provider.client = AsyncOpenAI(
+            api_key=config.api_key,
+            base_url=config.get_base_url()
+        )
+    elif hasattr(provider, 'client'):
+        # Make sure provider has client initialized with correct API key
+        provider.client.api_key = config.api_key
+
+    # Create the model with exactly the signature from the docs
     return OpenAIModel(
-        config.model,
-        client=client
+        model_name=config.model,
+        provider=provider
     )
 
 async def get_pydantic_ai_agent():
@@ -106,16 +135,7 @@ async def main():
     mcp_client_instance = None
     try:
         # Initialize the agent and message history
-        try:
-            mcp_client_instance, mcp_agent = await get_pydantic_ai_agent()
-        except TypeError as e:
-            if "base_url" in str(e):
-                print("\nError: The version of pydantic-ai you're using doesn't support the base_url parameter.")
-                print("Please update pydantic-ai to the latest version or check the implementation of OpenAIModel.")
-                return
-            else:
-                raise
-
+        mcp_client_instance, mcp_agent = await get_pydantic_ai_agent()
         console = Console()
         messages = []
 
