@@ -2,16 +2,17 @@ from rich.markdown import Markdown
 from rich.console import Console
 from rich.live import Live
 from dotenv import load_dotenv
+load_dotenv()
 import asyncio
 import pathlib
 import sys
 import os
-
+import logfire
 from pydantic_ai import Agent
 from openai import AsyncOpenAI, OpenAI
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers import Provider, infer_provider
-
+logfire.configure(os.getenv('LOGFIRE_TOKEN'), send_to_logfire='if-token-present')
 import mcp_client
 from mcp_client import LLMProvider, ProviderConfig
 
@@ -20,7 +21,7 @@ SCRIPT_DIR = pathlib.Path(__file__).parent.resolve()
 # Define the path to the config file relative to the script directory
 CONFIG_FILE = SCRIPT_DIR / "mcp_config.json"
 
-load_dotenv()
+
 
 def get_provider_config() -> ProviderConfig:
     """Get provider config from environment variables."""
@@ -30,14 +31,14 @@ def get_provider_config() -> ProviderConfig:
         return ProviderConfig(
             provider=LLMProvider.OPENAI,
             api_key=os.getenv('LLM_API_KEY', 'no-api-key-provided'),
-            model=os.getenv('MODEL_CHOICE', 'gpt-4o-mini'),
+            model=os.getenv('MODEL_CHOICE', 'gpt-4o-latest'),
             base_url=os.getenv('BASE_URL', 'https://api.openai.com/v1'),
         )
     elif provider_name == "anthropic":
         return ProviderConfig(
             provider=LLMProvider.ANTHROPIC,
             api_key=os.getenv('LLM_API_KEY', 'no-api-key-provided'),
-            model=os.getenv('MODEL_CHOICE', 'claude-3-sonnet-20240229'),
+            model=os.getenv('MODEL_CHOICE', 'claude-3-7-sonnet-20250219'),
             base_url=os.getenv('BASE_URL', 'https://api.anthropic.com/v1'),
             additional_params={
                 "thinking": {"type": "enabled" if os.getenv('ENABLE_THINKING') else "disabled"}
@@ -47,7 +48,7 @@ def get_provider_config() -> ProviderConfig:
         return ProviderConfig(
             provider=LLMProvider.GEMINI,
             api_key=os.getenv('LLM_API_KEY', 'no-api-key-provided'),
-            model=os.getenv('MODEL_CHOICE', 'gemini-1.5-pro'),
+            model=os.getenv('MODEL_CHOICE', 'gemini-2.5-pro-exp-03-25'),
             base_url=os.getenv('BASE_URL', 'https://generativelanguage.googleapis.com/v1beta/openai'),
         )
     elif provider_name == "ollama":
@@ -62,7 +63,7 @@ def get_provider_config() -> ProviderConfig:
         return ProviderConfig(
             provider=LLMProvider.OPENAI,
             api_key=os.getenv('LLM_API_KEY', 'no-api-key-provided'),
-            model=os.getenv('MODEL_CHOICE', 'gpt-4o-mini'),
+            model=os.getenv('MODEL_CHOICE', 'gpt-4o-latest'),
             base_url=os.getenv('BASE_URL', 'https://api.openai.com/v1'),
         )
 
@@ -116,7 +117,7 @@ async def get_pydantic_ai_agent():
     client = mcp_client.MCPClient()
     client.load_servers(str(CONFIG_FILE))
     tools = await client.start()
-    return client, Agent(model=get_model(), tools=tools)
+    return client, Agent(model=get_model(), tools=tools, instrument=True)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
