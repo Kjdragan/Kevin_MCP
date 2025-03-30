@@ -12,7 +12,7 @@ from pydantic_ai import Agent
 from openai import AsyncOpenAI, OpenAI
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers import Provider, infer_provider
-logfire.configure(os.getenv('LOGFIRE_TOKEN'), send_to_logfire='if-token-present')
+logfire.configure(token=os.getenv('LOGFIRE_TOKEN'), send_to_logfire='if-token-present')
 import mcp_client
 from mcp_client import LLMProvider, ProviderConfig
 
@@ -31,7 +31,7 @@ def get_provider_config() -> ProviderConfig:
         return ProviderConfig(
             provider=LLMProvider.OPENAI,
             api_key=os.getenv('LLM_API_KEY', 'no-api-key-provided'),
-            model=os.getenv('MODEL_CHOICE', 'gpt-4o-latest'),
+            model=os.getenv('MODEL_CHOICE', 'gpt-4o'),
             base_url=os.getenv('BASE_URL', 'https://api.openai.com/v1'),
         )
     elif provider_name == "anthropic":
@@ -63,7 +63,7 @@ def get_provider_config() -> ProviderConfig:
         return ProviderConfig(
             provider=LLMProvider.OPENAI,
             api_key=os.getenv('LLM_API_KEY', 'no-api-key-provided'),
-            model=os.getenv('MODEL_CHOICE', 'gpt-4o-latest'),
+            model=os.getenv('MODEL_CHOICE', 'gpt-4o'),
             base_url=os.getenv('BASE_URL', 'https://api.openai.com/v1'),
         )
 
@@ -81,6 +81,9 @@ def get_model():
     )
     """
     config = get_provider_config()
+    
+    # Debug: Print the exact model name from config
+    print(f"DEBUG: Using model from config: {config.model}")
 
     # Set environment variables for authentication
     os.environ['OPENAI_API_KEY'] = config.api_key
@@ -107,10 +110,15 @@ def get_model():
         provider.client.api_key = config.api_key
 
     # Create the model with exactly the signature from the docs
-    return OpenAIModel(
+    model = OpenAIModel(
         model_name=config.model,
         provider=provider
     )
+    
+    # Debug: Print the model name being used in OpenAIModel
+    print(f"DEBUG: OpenAIModel created with model_name: {config.model}")
+    
+    return model
 
 async def get_pydantic_ai_agent():
     """Initialize and return the MCP client and Pydantic AI agent."""
@@ -128,10 +136,13 @@ async def get_pydantic_ai_agent():
 async def main():
     print("=== Pydantic AI MCP CLI Chat ===")
     print("Type 'exit' to quit the chat")
-    provider = os.getenv('PROVIDER', 'openai')
-    model = os.getenv('MODEL_CHOICE', 'default')
+    provider_config = get_provider_config()
+    provider = provider_config.provider.value
+    model = provider_config.model
     print(f"Using provider: {provider}")
     print(f"Using model: {model}")
+    # Debug: Show environment variable value directly
+    print(f"MODEL_CHOICE env value: {os.getenv('MODEL_CHOICE', 'not-set')}")
 
     mcp_client_instance = None
     try:
